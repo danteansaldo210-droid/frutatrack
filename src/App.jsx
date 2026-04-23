@@ -282,7 +282,7 @@ function PanelHistorial({historial,onClose}){
                             <div style={{display:"flex",gap:6,marginBottom:7,flexWrap:"wrap"}}>
                               {lote.guia&&<Badge color="#60a5fa">📋 Guía {lote.guia}</Badge>}
                               {lote.rampla&&<Badge color="#fb923c">🚛 Rampla {lote.rampla}</Badge>}
-                              {lote.especie&&<Badge color="#4ade80">🍎 {lote.especie}</Badge>}
+                              {lote.especie&&<Badge color="#4ade80">🌰 {lote.especie}</Badge>}
                             </div>
                             <div style={{display:"flex",alignItems:"center",overflowX:"auto",background:"#0f1117",borderRadius:12,padding:"12px",gap:0}}>
                               {ETAPAS.map((e,i)=>{
@@ -381,16 +381,12 @@ function VistaTerreno({data,setData,operarios}){
 
   function aceptarPesaje(pesajeId){
     if(!operario){setShowLogin(true);return;}
-    const etaDest=SIGUIENTE[etapaId]||etapaId;
-    if(operario.etapa&&operario.etapa!==etaDest){ msg("noPermite"); return; }
     setData(d=>({...d,registros:d.registros.map(r=>r.id===pesajeId?{...r,estado:"aceptado",operarioAcepta:operario.nombre,fechaAcepta:new Date().toISOString()}:r)}));
     msg("aceptado");
   }
 
   function cerrarEtapa(){
     if(!operario){setShowLogin(true);return;}
-    const etaDest=SIGUIENTE[etapaId]||etapaId;
-    if(operario.etapa&&operario.etapa!==etaDest){ msg("noPermite"); return; }
     if(totalAcept===0){ msg("sinKg"); return; }
     setData(d=>({...d,registros:d.registros.map(r=>r.loteId===loteId&&r.etapaId===etapaId?{...r,cerrada:true}:r)}));
     msg("cerrado");
@@ -421,7 +417,7 @@ function VistaTerreno({data,setData,operarios}){
         {/* Header */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:22}}>🍎</span>
+            <span style={{fontSize:22}}>🌰</span>
             <div><div style={{fontSize:17,fontWeight:800}}>Terreno</div><div style={{fontSize:11,color:"#4b5563"}}>Registro de proceso</div></div>
           </div>
           {operario
@@ -482,7 +478,7 @@ function VistaTerreno({data,setData,operarios}){
           }
           {loteActual&&(
             <div style={{marginTop:10,display:"flex",gap:5,flexWrap:"wrap"}}>
-              {loteActual.especie&&<Badge color="#4ade80">🍎 {loteActual.especie}</Badge>}
+              {loteActual.especie&&<Badge color="#4ade80">🌰 {loteActual.especie}</Badge>}
               {loteActual.variedad&&<Badge color="#a78bfa">✨ {loteActual.variedad}</Badge>}
               {loteActual.guia&&<Badge color="#60a5fa">📋 G-{loteActual.guia}</Badge>}
               {loteActual.rampla&&<Badge color="#fb923c">🚛 R-{loteActual.rampla}</Badge>}
@@ -592,23 +588,22 @@ function VistaTerreno({data,setData,operarios}){
                   </Btn>
                 </div>
 
-                {/* Botón finalizar pesajes */}
+                {/* Botón Listo */}
                 {pesajes.filter(p=>p.estado==="aceptado").length>0&&(
-                  <div style={{marginTop:14,background:"#60a5fa11",border:"1px solid #60a5fa44",borderRadius:11,padding:"14px"}}>
-                    <div style={{fontSize:13,color:"#60a5fa",fontWeight:700,marginBottom:3}}>
-                      🏁 Finalizar pesajes de {etapaActual?.label}
-                    </div>
-                    <div style={{fontSize:11,color:"#9ca3af",marginBottom:3}}>
-                      Total aceptado: <b style={{color:"#4ade80"}}>{totalAcept} kg</b> en {pesajes.filter(p=>p.estado==="aceptado").length} pesaje{pesajes.filter(p=>p.estado==="aceptado").length!==1?"s":""}.
+                  <div style={{marginTop:14,background:"#4ade8011",border:"1px solid #4ade8044",borderRadius:11,padding:"14px"}}>
+                    <div style={{fontSize:13,color:"#4ade80",fontWeight:700,marginBottom:3}}>
+                      ¿Terminaste los pesajes de {etapaActual?.label}?
                     </div>
                     <div style={{fontSize:11,color:"#9ca3af",marginBottom:10}}>
-                      Al finalizar se bloquea esta etapa y se habilita <b style={{color:ETAPAS.find(e=>e.id===SIGUIENTE[etapaId])?.color||"#60a5fa"}}>{ETAPAS.find(e=>e.id===SIGUIENTE[etapaId])?.label||"la siguiente etapa"}</b>.
+                      Total: <b style={{color:"#4ade80"}}>{totalAcept} kg</b> en {pesajes.filter(p=>p.estado==="aceptado").length} pesaje{pesajes.filter(p=>p.estado==="aceptado").length!==1?"s":""}. Al presionar <b>Listo</b> se cierra esta etapa y se habilita <b style={{color:ETAPAS.find(e=>e.id===SIGUIENTE[etapaId])?.color||"#4ade80"}}>{ETAPAS.find(e=>e.id===SIGUIENTE[etapaId])?.label||"la siguiente etapa"}</b>.
                     </div>
-                    {flash==="noPermite"&&<Alerta color="#f87171">⛔ Solo el responsable de {ETAPAS.find(e=>e.id===(SIGUIENTE[etapaId]||etapaId))?.label} puede finalizar.</Alerta>}
-                    {flash==="cerrado"  &&<Alerta color="#4ade80">✅ Pesajes finalizados — siguiente etapa desbloqueada</Alerta>}
-                    {flash==="sinKg"   &&<Alerta color="#fb923c">⚠️ Debes tener al menos un pesaje aceptado.</Alerta>}
-                    <Btn onClick={cerrarEtapa} disabled={!operario} bg="#60a5fa" style={{width:"100%",padding:"13px",marginTop:8,fontSize:14}}>
-                      {!operario?"👤 Identificarse":"🏁 Finalizar pesajes"}
+                    <div style={{fontSize:11,color:"#6b7280",marginBottom:8}}>
+                      Solo puede cerrar el responsable de <b style={{color:ETAPAS.find(e=>e.id===(SIGUIENTE[etapaId]||etapaId))?.color}}>{ETAPAS.find(e=>e.id===(SIGUIENTE[etapaId]||etapaId))?.label}</b>.
+                    </div>
+                    {flash==="noPermite"&&<Alerta color="#f87171">⛔ Solo el responsable de {ETAPAS.find(e=>e.id===(SIGUIENTE[etapaId]||etapaId))?.label} puede cerrar esta etapa.</Alerta>}
+                    {flash==="cerrado"&&<Alerta color="#4ade80">✅ Etapa cerrada — siguiente etapa desbloqueada</Alerta>}
+                    <Btn onClick={cerrarEtapa} disabled={!operario} bg="#4ade80" fg="#000" style={{width:"100%",padding:"14px",fontSize:15,fontWeight:800}}>
+                      {!operario?"👤 Identificarse":"✅ Listo — cerrar etapa"}
                     </Btn>
                   </div>
                 )}
@@ -716,7 +711,7 @@ function VistaEscritorio({data,setData,operarios,setOperarios,historial,setHisto
       {/* Sidebar */}
       <div style={{width:215,background:"#0f1117",borderRight:"1px solid #1e2130",padding:"18px 13px",flexShrink:0,position:"relative",minHeight:"100%"}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-          <span style={{fontSize:19}}>🍎</span>
+          <span style={{fontSize:19}}>🌰</span>
           <div><div style={{fontSize:13,fontWeight:800}}>FrutaTrack</div><div style={{fontSize:10,color:"#4b5563"}}>Trazabilidad</div></div>
         </div>
         {pendientes>0&&<div style={{background:"#78350f22",border:"1px solid #fb923c",borderRadius:9,padding:"7px 11px",marginBottom:5}}><div style={{fontSize:11,color:"#fb923c",fontWeight:700}}>⏳ {pendientes} pesaje{pendientes>1?"s":""} pendiente{pendientes>1?"s":""}</div></div>}
@@ -782,7 +777,7 @@ function VistaEscritorio({data,setData,operarios,setOperarios,historial,setHisto
                     <div style={{display:"flex",gap:6,marginBottom:7,flexWrap:"wrap",alignItems:"center"}}>
                       {lote.guia&&<Badge color="#60a5fa">📋 Guía {lote.guia}</Badge>}
                       {lote.rampla&&<Badge color="#fb923c">🚛 Rampla {lote.rampla}</Badge>}
-                      {lote.especie&&<Badge color="#4ade80">🍎 {lote.especie}</Badge>}
+                      {lote.especie&&<Badge color="#4ade80">🌰 {lote.especie}</Badge>}
                       {lote.variedad&&<Badge color="#a78bfa">✨ {lote.variedad}</Badge>}
                       <span style={{fontSize:10,color:"#4b5563"}}>Inicio: {fmt(lote.creadoEn)}</span>
                     </div>
@@ -827,7 +822,7 @@ function VistaEscritorio({data,setData,operarios,setOperarios,historial,setHisto
                 <table style={{width:"100%",borderCollapse:"collapse",minWidth:650}}>
                   <thead>
                     <tr style={{borderBottom:"1px solid #1e2130"}}>
-                      {["Fecha","Proveedor","Guía","Rampla","Etapa","Pesaje #","KG","Merma acum.","Comentario","Operario","Estado"].map(h=>(
+                      {["Fecha","Proveedor","Guía","Rampla","Etapa","Pesaje #","KG","Merma acum.","% Merma","Comentario","Operario","Estado"].map(h=>(
                         <th key={h} style={{padding:"10px 11px",textAlign:"left",fontSize:10,color:"#4b5563",fontWeight:700,whiteSpace:"nowrap"}}>{h}</th>
                       ))}
                     </tr>
@@ -837,9 +832,10 @@ function VistaEscritorio({data,setData,operarios,setOperarios,historial,setHisto
                       ETAPAS.flatMap(e=>{
                         const ps=pesajesDeEtapa(lote.id,e.id,data.registros);
                         return ps.map((p,i)=>{
-                          const totalHastaAqui=round(ps.slice(0,i+1).filter(r=>r.estado==="aceptado").reduce((s,r)=>s+r.kg,0));
                           const kgAnt=totalKgEtapa(lote.id,ORDEN[ORDEN.indexOf(e.id)-1]||e.id,data.registros);
                           const mermaAcum=ORDEN.indexOf(e.id)>0&&kgAnt>0?round(kgAnt-totalKgEtapa(lote.id,e.id,data.registros)):null;
+                          const mermaPct=mermaAcum!=null&&kgAnt>0?(mermaAcum/kgAnt*100).toFixed(1):null;
+                          const mCol=mermaPct&&parseFloat(mermaPct)>15?"#f87171":mermaPct&&parseFloat(mermaPct)>8?"#fb923c":"#6b7280";
                           return(
                             <tr key={p.id} style={{borderBottom:"1px solid #0f1117"}}>
                               <td style={{padding:"9px 11px",fontSize:10,color:"#6b7280",whiteSpace:"nowrap"}}>{fmt(p.fechaRegistro)}</td>
@@ -849,7 +845,8 @@ function VistaEscritorio({data,setData,operarios,setOperarios,historial,setHisto
                               <td style={{padding:"9px 11px"}}><Badge color={e.color}>{e.icon} {e.label}</Badge></td>
                               <td style={{padding:"9px 11px",fontSize:11,color:"#6b7280"}}>#{i+1}</td>
                               <td style={{padding:"9px 11px",fontSize:13,fontWeight:800,color:"#4ade80"}}>{p.kg} kg</td>
-                              <td style={{padding:"9px 11px",fontSize:11,color:mermaAcum&&mermaAcum>0?"#fb923c":"#374151"}}>{mermaAcum!=null&&mermaAcum>0?`-${mermaAcum} kg`:"—"}</td>
+                              <td style={{padding:"9px 11px",fontSize:11,fontWeight:700,color:mermaAcum&&mermaAcum>0?"#fb923c":"#374151"}}>{mermaAcum!=null&&mermaAcum>0?`-${mermaAcum} kg`:"—"}</td>
+                              <td style={{padding:"9px 11px",fontSize:11,fontWeight:700,color:mermaPct&&parseFloat(mermaPct)>0?mCol:"#374151"}}>{mermaPct&&parseFloat(mermaPct)>0?`${mermaPct}%`:"—"}</td>
                               <td style={{padding:"9px 11px",fontSize:10,color:"#9ca3af",maxWidth:100}}>{p.comentario||"—"}</td>
                               <td style={{padding:"9px 11px",fontSize:11}}>👤 {p.operario}</td>
                               <td style={{padding:"9px 11px"}}><Badge color={eC[p.estado]}>{eI[p.estado]} {p.estado}</Badge></td>
