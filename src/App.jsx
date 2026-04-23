@@ -24,16 +24,17 @@ function fmtDia(iso) {
 }
 
 // ── Lógica pesajes ────────────────────────────────────────────────────────────
+function toArr(v) { return !v ? [] : Array.isArray(v) ? v : Object.values(v).filter(Boolean); }
 function pesajesDeEtapa(loteId, etapaId, registros) {
-  return registros.filter(r=>r.loteId===loteId&&r.etapaId===etapaId);
+  return toArr(registros).filter(r=>r&&r.loteId===loteId&&r.etapaId===etapaId);
 }
 function totalKgEtapa(loteId, etapaId, registros) {
   return round(pesajesDeEtapa(loteId,etapaId,registros)
-    .filter(r=>r.estado==="aceptado")
-    .reduce((s,r)=>s+r.kg,0));
+    .filter(r=>r&&r.estado==="aceptado")
+    .reduce((s,r)=>s+(r.kg||0),0));
 }
 function etapaCerrada(loteId, etapaId, registros) {
-  return pesajesDeEtapa(loteId,etapaId,registros).some(r=>r.cerrada===true);
+  return pesajesDeEtapa(loteId,etapaId,registros).some(r=>r&&r.cerrada===true);
 }
 function calcMerma(loteId, etapaId, registros) {
   const idx=ORDEN.indexOf(etapaId);
@@ -249,7 +250,7 @@ function PanelSupervisor({operarios,setOperarios,onClose}){
 function PanelHistorial({historial,onClose}){
   const [sel,setSel]=useState(null);
   const sesion=sel!=null?historial[sel]:null;
-  function lotesPorFecha(s){ const g={}; s.lotes.forEach(l=>{ const f=l.creadoEn?new Date(l.creadoEn).toDateString():"Sin fecha"; if(!g[f]) g[f]={fecha:l.creadoEn,lotes:[]}; g[f].lotes.push(l); }); return Object.values(g).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)); }
+  function lotesPorFecha(s){ const g={}; toArr(s.lotes).forEach(l=>{ if(!l) return; const f=l.creadoEn?new Date(l.creadoEn).toDateString():"Sin fecha"; if(!g[f]) g[f]={fecha:l.creadoEn,lotes:[]}; g[f].lotes.push(l); }); return Object.values(g).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)); }
   return(
     <div style={{minHeight:"100%",background:"#080b12",color:"#fff",fontFamily:"sans-serif",padding:"16px 16px 50px"}}>
       <div style={{maxWidth:900,margin:"0 auto"}}>
@@ -262,7 +263,7 @@ function PanelHistorial({historial,onClose}){
           :<div style={{display:"grid",gridTemplateColumns:sesion?"260px 1fr":"1fr",gap:20}}>
             <div>
               <Lbl>Sesiones ({historial.length})</Lbl>
-              {[...historial].reverse().map((h,i)=>{ const idx=historial.length-1-i; const kgIn=h.lotes.reduce((s,l)=>s+round(h.registros.filter(r=>r.loteId===l.id&&r.etapaId==="recepcion"&&r.estado==="aceptado").reduce((s2,r)=>s2+r.kg,0)),0);
+              {[...historial].reverse().map((h,i)=>{ const idx=historial.length-1-i; const kgIn=toArr(h.lotes).filter(Boolean).reduce((s,l)=>s+round(toArr(h.registros).filter(r=>r&&r.loteId===l.id&&r.etapaId==="recepcion"&&r.estado==="aceptado").reduce((s2,r)=>s2+(r.kg||0),0)),0);
                 return(<Card key={idx} style={{marginBottom:10,cursor:"pointer",border:sel===idx?"1px solid #4ade80":"1px solid #2a2d3a"}} onClick={()=>setSel(sel===idx?null:idx)}>
                   <div style={{fontSize:13,fontWeight:700,color:sel===idx?"#4ade80":"#fff",marginBottom:4}}>📅 {fmtDia(h.guardadoEn)}</div>
                   <div style={{fontSize:11,color:"#6b7280"}}>{fmt(h.guardadoEn)}</div>
@@ -288,9 +289,9 @@ function PanelHistorial({historial,onClose}){
                             </div>
                             <div style={{display:"flex",alignItems:"center",overflowX:"auto",background:"#0f1117",borderRadius:12,padding:"12px",gap:0}}>
                               {ETAPAS.map((e,i)=>{
-                                const ps=sesion.registros.filter(r=>r.loteId===lote.id&&r.etapaId===e.id);
-                                const total=round(ps.filter(r=>r.estado==="aceptado").reduce((s,r)=>s+r.kg,0));
-                                const cerrada=ps.some(r=>r.cerrada);
+                                const ps=toArr(sesion.registros).filter(r=>r&&r.loteId===lote.id&&r.etapaId===e.id);
+                                const total=round(ps.filter(r=>r.estado==="aceptado").reduce((s,r)=>s+(r.kg||0),0));
+                                const cerrada=ps.some(r=>r&&r.cerrada);
                                 const m=cerrada?calcMerma(lote.id,e.id,sesion.registros):null;
                                 return(
                                   <div key={e.id} style={{display:"flex",alignItems:"center",flexShrink:0}}>
@@ -361,7 +362,7 @@ function VistaTerreno({data,setData,operarios}){
   const pesajes     = loteId&&etapaId ? pesajesDeEtapa(loteId,etapaId,data.registros) : [];
   const totalAcept  = loteId&&etapaId ? totalKgEtapa(loteId,etapaId,data.registros) : 0;
   const pend        = data.registros.filter(r=>r.estado==="pendiente").length;
-  const nombres     = [...new Set(data.lotes.map(l=>l.proveedor).filter(Boolean))].sort();
+  const nombres     = [...new Set(toArr(data.lotes).filter(Boolean).map(l=>l.proveedor).filter(Boolean))].sort();
 
   const mermaPreview=(()=>{
     if(!loteId||!etapaId||!kgEnt) return null;
@@ -681,7 +682,7 @@ function VistaEscritorio({data,setData,operarios,setOperarios,historial,setHisto
   const kgOut      = data.lotes.filter(l=>etapaCerrada(l.id,"ojoelius",data.registros)).reduce((s,l)=>s+totalKgEtapa(l.id,"ojoelius",data.registros),0);
   const mermaTot   = round(kgIn-kgOut);
   const mermaPct   = kgIn>0?(mermaTot/kgIn*100).toFixed(1):null;
-  const nombres    = [...new Set(data.lotes.map(l=>l.proveedor).filter(Boolean))].sort();
+  const nombres    = [...new Set(toArr(data.lotes).filter(Boolean).map(l=>l.proveedor).filter(Boolean))].sort();
   const lotesF     = filtro==="todos"?data.lotes:data.lotes.filter(l=>l.id===filtro);
   const porProv    = nombres.map(n=>({n,lotes:lotesF.filter(l=>l.proveedor===n)})).filter(g=>g.lotes.length>0);
 
@@ -883,7 +884,9 @@ export default function App(){
     const unsubData = onValue(ref(db,"data"), snap=>{
       if(snap.exists()){
         const v = snap.val();
-        setData({ lotes: toArr(v.lotes), registros: toArr(v.registros) });
+        const lotes = toArr(v.lotes).filter(Boolean);
+        const registros = toArr(v.registros).filter(Boolean);
+        setData({ lotes, registros });
       } else {
         setData({lotes:[],registros:[]});
       }
@@ -900,7 +903,12 @@ export default function App(){
 
   function setDataSync(d){
     const val = typeof d==="function" ? d(data) : d;
-    set(ref(db,"data"), val);
+    // Ensure arrays are saved as arrays (Firebase strips empty arrays)
+    const toSave = {
+      lotes: Array.isArray(val.lotes) ? val.lotes : Object.values(val.lotes||{}),
+      registros: Array.isArray(val.registros) ? val.registros : Object.values(val.registros||{})
+    };
+    set(ref(db,"data"), toSave);
   }
   function setOperariosSync(o){
     const val = typeof o==="function" ? o(operarios) : o;
