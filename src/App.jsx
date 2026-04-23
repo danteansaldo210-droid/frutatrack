@@ -1,18 +1,4 @@
 import { useState, useEffect } from "react";
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, onValue, set } from "firebase/database";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyD6pQ30jWGXo1EwBqHqMi34MLu5teQMi1M",
-  authDomain: "proceso-almendras.firebaseapp.com",
-  databaseURL: "https://proceso-almendras-default-rtdb.firebaseio.com",
-  projectId: "proceso-almendras",
-  storageBucket: "proceso-almendras.firebasestorage.app",
-  messagingSenderId: "428906942132",
-  appId: "1:428906942132:web:21b851d4ee07584bc1d1e1"
-};
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getDatabase(firebaseApp);
 
 const ETAPAS = [
   { id:"recepcion", label:"Recepción", icon:"🚛", color:"#4ade80" },
@@ -888,50 +874,6 @@ export default function App(){
   const [data,setData]           = useState({lotes:[],registros:[]});
   const [operarios,setOperarios] = useState([]);
   const [historial,setHistorial] = useState([]);
-  const [cargando,setCargando]   = useState(true);
-
-  // Sincronizar con Firebase
-  useEffect(()=>{
-    const refData = ref(db,"data");
-    const refOps  = ref(db,"operarios");
-    const refHist = ref(db,"historial");
-
-    const unsubData = onValue(refData, snap=>{
-      if(snap.exists()) setData(snap.val());
-      else setData({lotes:[],registros:[]});
-      setCargando(false);
-    });
-    const unsubOps  = onValue(refOps,  snap=>{ if(snap.exists()) setOperarios(snap.val()); else setOperarios([]); });
-    const unsubHist = onValue(refHist, snap=>{ if(snap.exists()) setHistorial(Object.values(snap.val())); else setHistorial([]); });
-
-    return ()=>{ unsubData(); unsubOps(); unsubHist(); };
-  },[]);
-
-  function setDataSync(d){
-    const val = typeof d === "function" ? d(data) : d;
-    setData(val);
-    set(ref(db,"data"), val);
-  }
-  function setOperariosSync(o){
-    const val = typeof o === "function" ? o(operarios) : o;
-    setOperarios(val);
-    set(ref(db,"operarios"), val);
-  }
-  function setHistorialSync(h){
-    const val = typeof h === "function" ? h(historial) : h;
-    setHistorial(val);
-    const obj = {};
-    val.forEach((s,i)=>{ obj[i]=s; });
-    set(ref(db,"historial"), obj);
-  }
-
-  if(cargando) return(
-    <div style={{height:"100vh",background:"#080b12",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16}}>
-      <div style={{fontSize:40}}>🌰</div>
-      <div style={{color:"#4ade80",fontSize:15,fontWeight:700}}>Conectando...</div>
-      <div style={{color:"#4b5563",fontSize:12}}>Sincronizando con Firebase</div>
-    </div>
-  );
 
   return(
     <div style={{height:"100vh",overflow:"hidden",display:"flex",flexDirection:"column",background:"#080b12"}}>
@@ -941,8 +883,8 @@ export default function App(){
       </div>
       <div style={{flex:1,overflowY:"auto"}}>
         {vista==="terreno"
-          ?<VistaTerreno    data={data} setData={setDataSync} operarios={operarios}/>
-          :<VistaEscritorio data={data} setData={setDataSync} operarios={operarios} setOperarios={setOperariosSync} historial={historial} setHistorial={setHistorialSync}/>
+          ?<VistaTerreno    data={data} setData={setData} operarios={operarios}/>
+          :<VistaEscritorio data={data} setData={setData} operarios={operarios} setOperarios={setOperarios} historial={historial} setHistorial={setHistorial}/>
         }
       </div>
     </div>
