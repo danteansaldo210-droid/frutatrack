@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { db } from "./firebase";
+import { ref, onValue, set } from "firebase/database";
 
 const ETAPAS = [
   { id:"recepcion", label:"Recepción", icon:"🚛", color:"#4ade80" },
@@ -874,6 +876,43 @@ export default function App(){
   const [data,setData]           = useState({lotes:[],registros:[]});
   const [operarios,setOperarios] = useState([]);
   const [historial,setHistorial] = useState([]);
+  const [cargando,setCargando]   = useState(true);
+
+  useEffect(()=>{
+    const unsubData = onValue(ref(db,"data"), snap=>{
+      setData(snap.exists() ? snap.val() : {lotes:[],registros:[]});
+      setCargando(false);
+    });
+    const unsubOps = onValue(ref(db,"operarios"), snap=>{
+      setOperarios(snap.exists() ? snap.val() : []);
+    });
+    const unsubHist = onValue(ref(db,"historial"), snap=>{
+      setHistorial(snap.exists() ? Object.values(snap.val()) : []);
+    });
+    return ()=>{ unsubData(); unsubOps(); unsubHist(); };
+  },[]);
+
+  function setDataSync(d){
+    const val = typeof d==="function" ? d(data) : d;
+    set(ref(db,"data"), val);
+  }
+  function setOperariosSync(o){
+    const val = typeof o==="function" ? o(operarios) : o;
+    set(ref(db,"operarios"), val);
+  }
+  function setHistorialSync(h){
+    const val = typeof h==="function" ? h(historial) : h;
+    const obj = {}; val.forEach((s,i)=>{ obj[i]=s; });
+    set(ref(db,"historial"), obj);
+  }
+
+  if(cargando) return(
+    <div style={{height:"100vh",background:"#080b12",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16}}>
+      <div style={{fontSize:48}}>🌰</div>
+      <div style={{color:"#4ade80",fontSize:16,fontWeight:700}}>Conectando...</div>
+      <div style={{color:"#4b5563",fontSize:12}}>Sincronizando con Firebase</div>
+    </div>
+  );
 
   return(
     <div style={{height:"100vh",overflow:"hidden",display:"flex",flexDirection:"column",background:"#080b12"}}>
@@ -883,8 +922,8 @@ export default function App(){
       </div>
       <div style={{flex:1,overflowY:"auto"}}>
         {vista==="terreno"
-          ?<VistaTerreno    data={data} setData={setData} operarios={operarios}/>
-          :<VistaEscritorio data={data} setData={setData} operarios={operarios} setOperarios={setOperarios} historial={historial} setHistorial={setHistorial}/>
+          ?<VistaTerreno    data={data} setData={setDataSync} operarios={operarios}/>
+          :<VistaEscritorio data={data} setData={setDataSync} operarios={operarios} setOperarios={setOperariosSync} historial={historial} setHistorial={setHistorialSync}/>
         }
       </div>
     </div>
