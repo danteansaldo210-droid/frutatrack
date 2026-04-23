@@ -879,15 +879,21 @@ export default function App(){
   const [cargando,setCargando]   = useState(true);
 
   useEffect(()=>{
+    const toArr = v => !v ? [] : Array.isArray(v) ? v : Object.values(v);
     const unsubData = onValue(ref(db,"data"), snap=>{
-      setData(snap.exists() ? snap.val() : {lotes:[],registros:[]});
+      if(snap.exists()){
+        const v = snap.val();
+        setData({ lotes: toArr(v.lotes), registros: toArr(v.registros) });
+      } else {
+        setData({lotes:[],registros:[]});
+      }
       setCargando(false);
     });
     const unsubOps = onValue(ref(db,"operarios"), snap=>{
-      setOperarios(snap.exists() ? snap.val() : []);
+      setOperarios(snap.exists() ? toArr(snap.val()) : []);
     });
     const unsubHist = onValue(ref(db,"historial"), snap=>{
-      setHistorial(snap.exists() ? Object.values(snap.val()) : []);
+      setHistorial(snap.exists() ? toArr(snap.val()) : []);
     });
     return ()=>{ unsubData(); unsubOps(); unsubHist(); };
   },[]);
